@@ -2,7 +2,7 @@
 
 A production-shaped MCP (Model Context Protocol) server exposing 5 tools over a seeded PostgreSQL dataset of companies and contacts: search, detail lookup, contact search, enrichment, and CSV export. Built for the Firmable full-stack take-home.
 
-See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the system diagram and design rationale (why Streamable HTTP over stdio, session handling, error-handling strategy, export-link trade-offs, etc.).
+![Architecture diagram](docs/architecture-diagram.png)
 
 ## Stack
 
@@ -101,7 +101,7 @@ The assignment asks for any 2; this implementation covers four:
 - **Error handling** — a small domain error taxonomy (`NotFoundError`/`ValidationError`/`InternalError`) and a shared tool-handler wrapper mean no raw exception or stack trace ever reaches a client; every failure comes back as a structured MCP `isError: true` result.
 - **Logging** — structured `pino` logs for every tool call (`toolName`, `durationMs`, `outcome`) and every auth failure.
 
-Rate limiting was scoped out — see "Trade-offs" in `ARCHITECTURE.md`.
+Rate limiting was scoped out for this take-home rather than implemented.
 
 ## Demo checklist
 
