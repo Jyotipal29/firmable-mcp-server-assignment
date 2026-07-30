@@ -66,39 +66,6 @@ Copy `.env.example` to `.env` and adjust as needed:
 
 `search_contacts` never returns `email`/`linkedin` — those are only available via `enrich_contact`, which simulates a distinct enrichment-provider lookup (small artificial latency + a synthesized `source`/`confidence` signal) rather than just re-exposing the same columns. `export_contacts` similarly excludes enrichment fields, so exporting and enriching stay two different actions.
 
-## Trying it with curl
-
-The MCP endpoint is stateful per the Streamable HTTP spec: send `initialize` once, capture the `Mcp-Session-Id` response header, then reuse it on every following call.
-
-```bash
-API_KEY=dev-local-api-key-change-me   # matches .env.example; use your real value
-BASE=http://localhost:3001
-
-# 1. No auth header -> 401
-curl -i -X POST $BASE/mcp -H "Content-Type: application/json" -d '{}'
-
-# 2. Initialize a session
-curl -i -X POST $BASE/mcp \
-  -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
-  -H "Authorization: Bearer $API_KEY" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"1.0"}}}'
-# copy the `mcp-session-id` response header into SESSION below
-
-SESSION=<paste-session-id>
-
-# 3. Discover tools
-curl -X POST $BASE/mcp \
-  -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
-  -H "Authorization: Bearer $API_KEY" -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
-
-# 4. Call a tool
-curl -X POST $BASE/mcp \
-  -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" \
-  -H "Authorization: Bearer $API_KEY" -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"search_companies","arguments":{"query":"a","limit":3}}}'
-```
-
 ## Connecting from Claude Desktop
 
 Claude Desktop's built-in MCP config spawns local stdio processes; to point it at this HTTP server we bridge with [`mcp-remote`](https://www.npmjs.com/package/mcp-remote). See `examples/claude_desktop_config.json`:
@@ -140,7 +107,7 @@ Rate limiting was scoped out — see "Trade-offs" in `ARCHITECTURE.md`.
 
 What a reviewer should be able to see working:
 
-- [ ] **Tool discovery** — `tools/list` (via curl or Claude Desktop's tools menu) returns all 5 tools with schemas
+- [ ] **Tool discovery** — Claude Desktop's tools menu lists all 5 tools with schemas
 - [ ] **Tool execution** — full chain: `search_companies` → `get_company` → `search_contacts` → `enrich_contact` → `export_contacts`, then open the returned `downloadUrl` in a browser
 - [ ] **Auth flow** — a request with no/invalid `Authorization` header gets `401`; a valid key succeeds
 - [ ] **Error handling** — an unknown-but-valid-UUID `companyId` returns a structured "not found" tool error (not a crash); a malformed `companyId` is rejected as a validation error before the handler even runs
