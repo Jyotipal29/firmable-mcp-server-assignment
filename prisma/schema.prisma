@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Company {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String
+  website     String?
+  industry    String?
+  employees   Int?
+  country     String?
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  contacts    Contact[]
+
+  @@index([name])
+  @@index([country])
+  @@map("companies")
+}
+
+model Contact {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name      String
+  title     String?
+  email     String?
+  linkedin  String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([companyId])
+  @@index([title])
+  @@map("contacts")
+}
